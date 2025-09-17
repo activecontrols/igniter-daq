@@ -6,7 +6,10 @@
 // - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
 // - Introduction, links and more at the top of imgui.cpp
 
+// Modified by RobertJN64 to add plot support and split render into its own file
+
 #include "imgui.h"
+#include "implot.h"
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx11.h"
 #include <d3d11.h>
@@ -28,7 +31,7 @@ void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 // Forward declaration of render loop (in ui.cpp)
-void render_loop(ImGuiIO io);
+void render_loop();
 
 // Main code
 int main(int, char **) {
@@ -39,7 +42,7 @@ int main(int, char **) {
   // Create application window
   WNDCLASSEXW wc = {sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"ImGui Example", nullptr};
   ::RegisterClassExW(&wc);
-  HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Dear ImGui DirectX11 Example", WS_OVERLAPPEDWINDOW, 100, 100, (int)(1280 * main_scale), (int)(800 * main_scale), nullptr, nullptr, wc.hInstance, nullptr);
+  HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"PSP Active Controls DAQ v0.1", WS_OVERLAPPEDWINDOW, 100, 100, (int)(1280 * main_scale), (int)(800 * main_scale), nullptr, nullptr, wc.hInstance, nullptr);
 
   // Initialize Direct3D
   if (!CreateDeviceD3D(hwnd)) {
@@ -55,6 +58,7 @@ int main(int, char **) {
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
+  ImPlot::CreateContext();
   ImGuiIO &io = ImGui::GetIO();
   (void)io;
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
@@ -68,6 +72,11 @@ int main(int, char **) {
   ImGuiStyle &style = ImGui::GetStyle();
   style.ScaleAllSizes(main_scale); // Bake a fixed style scale. (until we have a solution for dynamic style scaling, changing this requires resetting Style + calling this again)
   style.FontScaleDpi = main_scale; // Set initial font scale. (using io.ConfigDpiScaleFonts=true makes this unnecessary. We leave both here for documentation purpose)
+
+  ImPlotStyle &plotStyle = ImPlot::GetStyle();
+  plotStyle.PlotBorderSize = 1.0f;                                                             // thickness of border
+  plotStyle.Colors[ImPlotCol_FrameBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);                        // Plot background
+  plotStyle.Colors[ImPlotCol_PlotBorder] = ImVec4(205 / 255.0, 159 / 255.0, 38 / 255.0, 1.0f); // Plot border
 
   // Setup Platform/Renderer backends
   ImGui_ImplWin32_Init(hwnd);
@@ -128,7 +137,7 @@ int main(int, char **) {
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
-    render_loop(io);
+    render_loop();
 
     // Rendering
     ImGui::Render();
@@ -146,6 +155,7 @@ int main(int, char **) {
   // Cleanup
   ImGui_ImplDX11_Shutdown();
   ImGui_ImplWin32_Shutdown();
+  ImPlot::DestroyContext();
   ImGui::DestroyContext();
 
   CleanupDeviceD3D();

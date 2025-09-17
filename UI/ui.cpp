@@ -87,6 +87,20 @@ void control_panel() {
     }
     ImGui::EndTable();
   }
+
+  ImGui::Dummy(ImVec2(0, 100)); // Add vertical spacing
+
+  static char inputBuffer[128] = ""; // buffer for text input
+  ImGui::InputTextWithHint("##serial_input", "enter serial command", inputBuffer, IM_ARRAYSIZE(inputBuffer));
+  ImGui::SameLine();
+  if (daq_button("Send", ImVec2(-1, 0), IM_COL32(33, 112, 69, 255))) {
+    // Do something with inputBuffer
+    printf("You entered: %s\n", inputBuffer);
+    inputBuffer[0] = '\0';
+  }
+
+  static char outputBuffer[128] = ">help\nping\npong"; // buffer for text input
+  ImGui::InputTextMultiline("##serial_output", outputBuffer, IM_ARRAYSIZE(outputBuffer));
 }
 
 void plot_panel() {
