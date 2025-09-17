@@ -1,26 +1,51 @@
 #include "imgui.h"
+#include "implot.h"
+#include "math.h"
 
-void render_loop(ImGuiIO io) {
-  static float f = 0.0f;
-  static int counter = 0;
-  static bool show_demo_window = true;
-  static bool show_another_window = false;
-  static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+#include <iostream>
 
-  ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
+void render_loop() {
+  static int frame_counter = 0;
+  frame_counter++;
 
-  ImGui::Text("This is some useful text.");          // Display some text (you can use a format strings too)
-  ImGui::Checkbox("Demo Window", &show_demo_window); // Edit bools storing our window open/close state
-  ImGui::Checkbox("Another Window", &show_another_window);
+  ImGuiIO io = ImGui::GetIO();
 
-  ImGui::SliderFloat("float", &f, 0.0f, 1.0f);             // Edit 1 float using a slider from 0.0f to 1.0f
-  ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats representing a color
+  ImGui::SetNextWindowPos(ImVec2(0, 0));
+  ImGui::SetNextWindowSize(io.DisplaySize); // io = ImGui::GetIO()
+  ImGui::Begin("MainWindow", nullptr,
+               ImGuiWindowFlags_NoTitleBar |
+                   ImGuiWindowFlags_NoResize |
+                   ImGuiWindowFlags_NoMove |
+                   ImGuiWindowFlags_NoCollapse |
+                   ImGuiWindowFlags_NoBringToFrontOnFocus |
+                   ImGuiWindowFlags_NoNavFocus);
+  // Get available width for plots
+  ImVec2 avail = ImGui::GetContentRegionAvail();
 
-  if (ImGui::Button("Button")) // Buttons return true when clicked (most widgets return true when edited/activated)
-    counter++;
-  ImGui::SameLine();
-  ImGui::Text("counter = %d", counter);
+  // Sine Plot
+  static float xs[1000], ys[1000];
+  for (int i = 0; i < 1000; ++i) {
+    xs[i] = i * 0.01f;
+    ys[i] = sin(xs[i] + frame_counter / 100.0);
+  }
+  if (ImPlot::BeginPlot("Sine Wave")) { // half height
+    ImPlot::PlotLine("sin(x)", xs, ys, 1000);
+    ImPlot::EndPlot();
+  }
 
-  ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+  // Cosine Plot
+  for (int j = 0; j < 5; j++) {
+    for (int i = 0; i < 1000; ++i) {
+      ys[i] = cos(xs[i] + (frame_counter + j * 20) / 10.0);
+    }
+    ImGui::PushID(j);
+    if (ImPlot::BeginPlot("Cosine Wave", ImVec2(-1, 100))) { // half height
+      ImPlot::PlotLine("cos(x)", xs, ys, 1000);
+      ImPlot::EndPlot();
+    }
+    ImGui::PopID();
+  }
+
+  ImGui::Text("%f", io.Framerate);
   ImGui::End();
 }
